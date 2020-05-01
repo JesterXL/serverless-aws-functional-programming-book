@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  asteroid-app
+
+  Sample SAM Template for asteroid-app
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  DownloadBennerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: download-benner/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Timeout: 60
+      Policies:
+      - S3WritePolicy:
+          BucketName:
+            !Ref AsteroidFilesBucket
+  
+  DownloadExoplanetsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: download-exoplanets/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Timeout: 60
+      Policies:
+      - S3WritePolicy:
+          BucketName:
+            !Ref AsteroidFilesBucket
+
+  ParseMassesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: parse-masses/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Timeout: 60
+      Policies:
+      - S3WritePolicy:
+          BucketName:
+            !Ref AsteroidFilesBucket
+
+  AsteroidFilesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: asteroid-files
+
+  GetAsteroidsDataStepFunction:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: get-asteroid-data
+      RoleArn:
+        !Sub
+          - |-
+            arn:aws:iam::${AWS::AccountId}:role/service-role/StatesExecutionRole-us-east-1
+          - accountID: !Ref AWS::AccountId
+      DefinitionString:
+        !Sub
+        - |-
+          {
+            "Comment": "Loads asteroid data from various NASA sources, parses, and puts into a database.",
+            "StartAt": "Download Initial Files",
+            "States": {
+              "Download Initial Files": {
+                "Type": "Parallel",
+                "End": true,
+                "Branches": [
+                  {
+                    "StartAt": "Download Benner",
+                    "States": {
+                      "Download Benner": {
+                        "Type": "Task",
+                        "Resource": "${downloadBennerLambda}",
+                        "End": true
+                      }
+                    }
+                  },
+                  {
+                    "StartAt": "Download Exoplanets",
+                    "States": {
+                      "Download Exoplanets": {
+                        "Type": "Task",
+                        "Resource": "${downloadExoplanetsLambda}",
+                        "Retry": [
+                          {
+                            "ErrorEquals": [
+                              "HTTPError"
+                            ],
+                            "IntervalSeconds": 10,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2
+                          }
+                        ],
+                        "End": true
+                      }
+                    }
+                  },
+                  {
+                    "StartAt": "Parse Masses",
+                    "States": {
+                      "Parse Masses": {
+                        "Type": "Task",
+                        "Resource": "${parseMassesLambda}",
+                        "End": true
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        - { downloadBennerLambda : !GetAtt DownloadBennerFunction.Arn,
+            downloadExoplanetsLambda : !GetAtt DownloadExoplanetsFunction.Arn,
+            parseMassesLambda : !GetAtt ParseMassesFunction.Arn }
+
+Outputs:
+  DownloadBennerFunction:
+    Description: "Downloads and parses delta velocity information and puts the new CSV file on S3."
+    Value: !GetAtt DownloadBennerFunction.Arn
+  HelloWorldFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt DownloadBennerFunctionRole.Arn
+  GetAsteroidsDataStepFunction:
+    Description: "Gets asteroid data from Nasa, parses, and puts into Dynamo."
+    Value: !Ref GetAsteroidsDataStepFunction

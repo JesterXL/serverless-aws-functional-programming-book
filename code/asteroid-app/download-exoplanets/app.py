@@ -1,0 +1,56 @@
+from urllib.request import urlopen
+import boto3
+import traceback
+import sys
+
+EXOPLANET_URL = 'http://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=koi_sma,kepoi_name,koi_eccen,koi_incl,koi_longp,koi_period,koi_prad,koi_teq,koi_srad,koi_steff,koi_sage,koi_disposition,koi_pdisposition'
+
+def download():
+    try:
+        result = urlopen(EXOPLANET_URL)
+        data = result.read()
+        return (data, None)
+    except Exception as e:
+        print("download failed:", e)
+        return (None, e)
+
+def upload(exoplanet_data):
+    try:
+        result = boto3.client('s3').put_object(
+            Bucket="asteroid-files", 
+            Key="exoplanet.csv", 
+            Body=exoplanet_data
+        )
+        return (result, None)
+    except Exception as e:
+        print("Upload to S3 failed:", e)
+        print(sys.exc_info()[2])
+        return (None, e)
+        
+class HTTPError(Exception):
+    pass
+
+class GeneralError(Exception):
+    pass
+
+def lambda_handler(event, context):
+    exoplanet_data, error = download()
+    if error != None:
+        raise HTTPError('Failed to download exoplanet data.')
+
+    result, error = upload(exoplanet_data)
+    if error != None:
+        raise GeneralError('Failed to upload exoplanet data to S3.')
+
+    return result
+
+if __name__ == "__main__":
+    try:
+        result = lambda_handler({}, {})
+        print("result:", result)
+    except HTTPError:
+        print("HTTP failed.")
+    except GeneralError:
+        print("General error.")
+    except Exception as e:
+        print("unknown error:", e)

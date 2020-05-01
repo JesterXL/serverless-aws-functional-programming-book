@@ -1,0 +1,3 @@
+# Creating Download Benner Equations
+
+We now have a good base to build, test, and deploy our code. Let's create our first Lambda to download our Benner equations which will eventually use to calculate Delta velocity for each asteroid and exoplanet. Yes, it's a Lambda that downloads a file and puts it on an S3 bucket. Since there is a lot of async here, we'll do it Python since doing asynchronous in JavaScript is confusing while Python is has opt-in confusion.

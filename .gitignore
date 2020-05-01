@@ -1,0 +1,3 @@
+.vuepress/dist
+book/.vuepress/dist
+code/asteroid-app/parse-masses/parse-masses-env

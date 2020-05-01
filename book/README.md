@@ -1,0 +1,14 @@
+# Introduction
+
+The whole reason you do Functional Programming is more predictable software. The whole reason you do Serverless on AWS is to let Amazon manage the infrastructure. There is one thing about Serverless, though, that doesn't get a lot of attention and that is how it follows a lot of Functional Programming ideas. Specifically, encouraging stateless architecture, composing functions together, and AWS handling state. State is hard, and AWS handles most of it now. Leveraging this is overwhelming if you're new to everything, both FP and AWS.
+
+In this article I'll cover how to deploy to AWS:
+
+- an Extract Transform Load (ETL) pipeline
+- an Orchestration REST API (<a href="https://samnewman.io/patterns/architectural/bff/">back-end API for a front-end</a>)
+- and a UI web application.
+
+All will be written using Functional Programming using Python, JavaScript, F#, and Elm with a plethora of libraries, although we'll start slow. We'll be using S3 buckets with triggers, Lambda, Step Functions, CloudWatch Events, DynamoDB tables with Kinesis stream events, SQS FIFO and regular queues, an SNS topic, and Application Load Balancers instead of API Gateway. We'll be offloading as much state as possible to AWS to manage (what they do best) and we'll write code (what we do best). For authoring and deployment, we'll be using a combination of <a href="https://aws.amazon.com/serverless/sam/">AWS SAM</a> (Serverless Application Model) and custom shell scripts. We will be glossing over intentionally IAM roles, VPC's, Subnets, Security Groups, and proxies because those aren't fun. While we're equipping you with tools you'll need for Continuous Integration / Continuous Delivery (CICD) pipelines, we're not covering those or how you integrate. Pipelines differ wildly in implementation, many of which people don't have a choice in how they work, nor are allow AWS services allowed to be utilized for security/compliance reasons.
+
+
+**Quick caveat on functional purity**: Before I get yelled at by Haskell purists, my definition is "pure enough to ship software that mostly works in a reasonable timeline". I'm aware most of the code examples are not scientifically pure & type checked, free of side effects, 100% determinism, blah blah blah. My goal is to lift the unwashed masses out of their OOP soup & imperative hell holes and show them a better, more fun way to build software. I want to give them an approach that is pragmatic and slowly adaptable to their existing work, not demand they follow the "Way of the I/O Monad". I know it's frustrating to see scientific/math definitions abused for the sake of someone's agenda, even if benevolent. I feel it's worth it. That said, I won't delete your comments if you lay into me. 😘
