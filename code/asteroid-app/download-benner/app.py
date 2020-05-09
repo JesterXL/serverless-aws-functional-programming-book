@@ -47,7 +47,7 @@ class HTTPFailure(Exception):
 
 def lambda_handler(event, context):
     try:
-        result = urlopen('http://echo.jpl.nasa.gov/~lance/delta_v/delta_v.rendezvous.html')
+        result = urlopen(event['benner']['url'])
     except Exception:
         raise HTTPFailure('Boom')
 
@@ -55,8 +55,8 @@ def lambda_handler(event, context):
     lines = data.splitlines()
     csv = parse_csv(lines)
     result = boto3.client('s3').put_object(
-        Bucket="asteroid-files", 
-        Key="benner_deltav.csv", 
+        Bucket=event['bucketName'], 
+        Key=event['benner']['filename'], 
         Body=csv
     )
     return result

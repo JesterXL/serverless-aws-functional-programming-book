@@ -46,6 +46,18 @@ Resources:
           BucketName:
             !Ref AsteroidFilesBucket
 
+  LatestAsteroidsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: latest-asteroids/
+      Handler: app.lambda_handler
+      Runtime: nodejs12.x
+      Timeout: 900
+      Policies:
+      - S3WritePolicy:
+          BucketName:
+            !Ref AsteroidFilesBucket
+
   AsteroidFilesBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -77,6 +89,7 @@ Resources:
                       "Download Benner": {
                         "Type": "Task",
                         "Resource": "${downloadBennerLambda}",
+                        "OutputPath": "$.ResponseMetadata.HTTPHeaders.etag",
                         "End": true
                       }
                     }
@@ -87,6 +100,7 @@ Resources:
                       "Download Exoplanets": {
                         "Type": "Task",
                         "Resource": "${downloadExoplanetsLambda}",
+                        "OutputPath": "$.ResponseMetadata.HTTPHeaders.etag",
                         "Retry": [
                           {
                             "ErrorEquals": [
@@ -107,6 +121,7 @@ Resources:
                       "Parse Masses": {
                         "Type": "Task",
                         "Resource": "${parseMassesLambda}",
+                        "OutputPath": "$.ResponseMetadata.HTTPHeaders.etag",
                         "End": true
                       }
                     }

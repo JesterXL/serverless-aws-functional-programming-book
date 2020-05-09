@@ -82,11 +82,15 @@ module.exports = {
           ]
         },
         {
-          title: `Chapter 7: Parallel in Step Funtion`,
+          title: `Chapter 7: Parallel in Step Function`,
           path: '/chapter7/',
           sidebarDepth: 2,
           children: [
             '/chapter7/destroy_all_globals',
+            '/chapter7/step_function_input',
+            '/chapter7/latest_asteroids_lambda',
+            '/chapter7/upload_partial_application',
+            '/chapter7/zip_stream',
           ]
         },
       ]

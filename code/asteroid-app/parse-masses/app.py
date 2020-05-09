@@ -1,6 +1,7 @@
 from json import dumps
 import boto3
 from Result import *
+from pymonad.Reader import curry
 
 def open_masses():
     try:
@@ -43,11 +44,12 @@ def mass_lines_to_dictionary(lines):
 def safe_dumps(dictionary):
     return Result.try_(lambda: dumps(dictionary))
 
-def upload(massd_json):
+@curry
+def upload(bucketName, filename, massd_json):
     return Result.try_(
         lambda: boto3.client('s3').put_object(
-            Bucket="asteroid-files", 
-            Key="massd.json", 
+            Bucket=bucketName, 
+            Key=filename, 
             Body=massd_json
         )
     )
@@ -58,10 +60,10 @@ def lambda_handler(event, context):
     >> read_mass_lines \
     >> mass_lines_to_dictionary \
     >> safe_dumps \
-    >> upload
+    >> upload(event['bucketName'], event['masses']['filename'])
     if isinstance(result.value, Exception):
         raise result.value
     return result.value
 
 if __name__ == "__main__":
-    lambda_handler({}, {})
+    lambda_handler({'bucketName': 'asteroid-files', 'masses': {'filename': 'massd.json'}}, {})
